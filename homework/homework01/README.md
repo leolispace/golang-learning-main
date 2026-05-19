@@ -1,4 +1,4 @@
-# Go Homework 01 Template
+# Go Homework-01 Template
 
 ## 使用说明
 
