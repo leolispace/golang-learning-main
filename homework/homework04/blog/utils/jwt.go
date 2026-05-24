@@ -7,33 +7,34 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwtSecret = []byte("your-secret-key") // 在生产环境中应该从环境变量读取
+
 type Claims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(secret []byte, userID uint, username string) (string, error) {
+// GenerateToken 生成JWT token
+func GenerateToken(userID uint, username string) (string, error) {
 	claims := Claims{
 		UserID:   userID,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 24小时过期
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secret)
+	return token.SignedString(jwtSecret)
 }
 
-func ParseToken(tokenString string, secret []byte) (*Claims, error) {
+// ParseToken 解析JWT token
+func ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return secret, nil
+		return jwtSecret, nil
 	})
 
 	if err != nil {
@@ -46,4 +47,3 @@ func ParseToken(tokenString string, secret []byte) (*Claims, error) {
 
 	return nil, errors.New("invalid token")
 }
-

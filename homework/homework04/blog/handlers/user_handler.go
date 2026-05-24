@@ -1,130 +1,123 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-
-	"gin-examples/project/models"
-	"gin-examples/project/services"
-	"gin-examples/project/utils"
+	"homework04/blog/config"
+	"homework04/blog/models"
+	"homework04/blog/utils"
 )
 
-type UserHandler struct {
-	userService *services.UserService
-	jwtSecret   []byte
+type AuthController struct{}
+
+type RegisterRequest struct {
+	Username string `json:"username" binding:"required,min=3,max=20"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
-func NewUserHandler(userService *services.UserService, jwtSecret []byte) *UserHandler {
-	return &UserHandler{
-		userService: userService,
-		jwtSecret:   jwtSecret,
-	}
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
-func (h *UserHandler) Register(c *gin.Context) {
-	var req models.CreateUserRequest
+type AuthResponse struct {
+	Token string      `json:"token"`
+	User  models.User `json:"user"`
+}
+
+// Register 用户注册
+func (ac *AuthController) Register(c *gin.Context) {
+	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationError(c, parseValidationErrors(err))
+		utils.BadRequest(c, err.Error())
 		return
 	}
 
-	user, err := h.userService.CreateUser(req)
+	// 检查用户名是否已存在
+	var existingUser models.User
+	if err := config.DB.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+		utils.BadRequest(c, "Username already exists")
+		return
+	}
+
+	// 检查邮箱是否已存在
+	if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		utils.BadRequest(c, "Email already exists")
+		return
+	}
+
+	// 创建新用户
+	user := models.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password, // 密码会在BeforeCreate钩子中自动加密
+	}
+
+	if err := config.DB.Create(&user).Error; err != nil {
+		utils.InternalServerError(c, "Failed to create user")
+		return
+	}
+
+	// 生成JWT token
+	token, err := utils.GenerateToken(user.ID, user.Username)
 	if err != nil {
-		utils.HandleError(c, err)
+		utils.InternalServerError(c, "Failed to generate token")
 		return
 	}
 
-	utils.Success(c, models.UserResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
+	utils.Success(c, AuthResponse{
+		Token: token,
+		User:  user,
 	})
 }
 
-func (h *UserHandler) Login(c *gin.Context) {
-	var req models.LoginRequest
+// Login 用户登录
+func (ac *AuthController) Login(c *gin.Context) {
+	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationError(c, parseValidationErrors(err))
+		utils.BadRequest(c, err.Error())
 		return
 	}
 
-	user, err := h.userService.Authenticate(req.Username, req.Password)
+	// 查找用户
+	var user models.User
+	if err := config.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
+		utils.Unauthorized(c, "Invalid username or password")
+		return
+	}
+
+	// 验证密码
+	if !user.CheckPassword(req.Password) {
+		utils.Unauthorized(c, "Invalid username or password")
+		return
+	}
+
+	// 生成JWT token
+	token, err := utils.GenerateToken(user.ID, user.Username)
 	if err != nil {
-		utils.HandleError(c, err)
+		utils.InternalServerError(c, "Failed to generate token")
 		return
 	}
 
-	token, err := utils.GenerateToken(h.jwtSecret, user.ID, user.Username)
-	if err != nil {
-		utils.HandleError(c, err)
-		return
-	}
-
-	utils.Success(c, gin.H{
-		"token": token,
-		"user": models.UserResponse{
-			ID:        user.ID,
-			Username:  user.Username,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt,
-		},
+	utils.Success(c, AuthResponse{
+		Token: token,
+		User:  user,
 	})
 }
 
-func (h *UserHandler) GetProfile(c *gin.Context) {
-	userID, exists := c.Get("userID")
+// GetProfile 获取用户信息
+func (ac *AuthController) GetProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
 	if !exists {
-		utils.Error(c, http.StatusUnauthorized, "Unauthorized")
+		utils.Unauthorized(c, "User not authenticated")
 		return
 	}
 
-	user, err := h.userService.GetUserByID(userID.(uint))
-	if err != nil {
-		utils.HandleError(c, err)
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		utils.NotFound(c, "User not found")
 		return
 	}
 
-	utils.Success(c, models.UserResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-	})
+	utils.Success(c, user)
 }
-
-func (h *UserHandler) UpdateProfile(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		utils.Error(c, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	var req models.UpdateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationError(c, parseValidationErrors(err))
-		return
-	}
-
-	user, err := h.userService.UpdateUser(userID.(uint), req)
-	if err != nil {
-		utils.HandleError(c, err)
-		return
-	}
-
-	utils.Success(c, models.UserResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-	})
-}
-
-func parseValidationErrors(err error) map[string]string {
-	errors := make(map[string]string)
-	// 简化处理，实际应该解析 binding 错误
-	errors["general"] = err.Error()
-	return errors
-}
-
