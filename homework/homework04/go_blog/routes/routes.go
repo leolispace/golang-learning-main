@@ -40,7 +40,7 @@ func SetupRoutes() *gin.Engine {
 	//}
 
 	// 自动迁移
-	if err := db.AutoMigrate(&models.User{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 	//
@@ -68,7 +68,7 @@ func SetupRoutes() *gin.Engine {
 		// 认证相关路由（无需认证）
 		auth := api.Group("")
 		{
-			auth.POST("/login", userHandler.Login)
+			auth.POST("/users/login", userHandler.Login)
 		}
 
 		// 需要认证的路由
