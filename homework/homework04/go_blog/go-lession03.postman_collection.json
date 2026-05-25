@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ac00e016-6f39-47e9-b8aa-e32898cbcc61",
+		"_postman_id": "4c29d769-0c99-415b-9837-061b0c5420d6",
 		"name": "go-lession03",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1634,8 +1634,37 @@
 						{
 							"name": "02-post/GetPostInfo?postID=2",
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImRtdCIsImV4cCI6MTc3OTc2OTI0MywibmJmIjoxNzc5NjgyODQzLCJpYXQiOjE3Nzk2ODI4NDN9.px_23Fsod_Fj058RmI_ZtOoKXcSTc39AK1nW18WETWI",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/api/v1/post/GetPostInfo?postID=1",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"post",
+										"GetPostInfo"
+									],
+									"query": [
+										{
+											"key": "postID",
+											"value": "1"
+										}
+									]
+								}
 							},
 							"response": []
 						},
@@ -1682,13 +1711,51 @@
 						{
 							"name": "04-post/UpdatePost?id=1",
 							"request": {
-								"method": "GET",
-								"header": []
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImRtdCIsImV4cCI6MTc3OTc2OTI0MywibmJmIjoxNzc5NjgyODQzLCJpYXQiOjE3Nzk2ODI4NDN9.px_23Fsod_Fj058RmI_ZtOoKXcSTc39AK1nW18WETWI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"content\":\"22222\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8080/api/v1/post/UpdatePost?id=1",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"post",
+										"UpdatePost"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
 							},
 							"response": []
 						},
 						{
-							"name": "New Request",
+							"name": "05-DeletePost?id=3",
 							"request": {
 								"auth": {
 									"type": "bearer",
@@ -1770,10 +1837,42 @@
 							"response": []
 						},
 						{
-							"name": "New Request",
+							"name": "03-02-comments/GetComments",
 							"request": {
-								"method": "GET",
-								"header": []
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImRtdCIsImV4cCI6MTc3OTc2OTI0MywibmJmIjoxNzc5NjgyODQzLCJpYXQiOjE3Nzk2ODI4NDN9.px_23Fsod_Fj058RmI_ZtOoKXcSTc39AK1nW18WETWI",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"page\":1,\n    \"pageSize\":10\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8080/api/v1/comments/GetComments",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"comments",
+										"GetComments"
+									]
+								}
 							},
 							"response": []
 						}
