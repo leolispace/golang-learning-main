@@ -38,7 +38,7 @@ func Load() *Config {
 			Host:     "localhost",
 			Port:     3306,
 			Username: "root",
-			Password: "root",
+			Password: "123456",
 			DBName:   "go_blog",
 		},
 		JWT: JWTConfig{
